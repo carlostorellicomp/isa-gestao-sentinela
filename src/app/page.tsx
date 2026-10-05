@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldAlert, 
   Users, 
@@ -46,6 +46,20 @@ import { UserManagement } from '@/components/users/user-management';
 import { WhatsAppConnectModal } from '@/components/whatsapp/whatsapp-connect-modal';
 import { ModuleHub } from '@/components/hub/module-hub';
 import { SettingsView } from '@/components/settings/settings-view';
+import { 
+  fetchSettings, 
+  persistSettings, 
+  fetchStudents, 
+  persistStudent, 
+  fetchGroups, 
+  persistGroups, 
+  fetchAlerts, 
+  persistAlert, 
+  fetchTickets, 
+  persistTicket, 
+  fetchUsers, 
+  persistUsers 
+} from '@/lib/db/sentinela-db';
 
 export default function SentinelaDashboard() {
   // Controle de Módulo Global: Hub Inicial vs Módulo Suporte (Sentinela)
@@ -83,13 +97,38 @@ export default function SentinelaDashboard() {
     setTimeout(() => setActionNotice(null), 4000);
   };
 
+  // Carregar dados persistidos (Supabase / LocalStorage)
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [loadedSettings, loadedStudents, loadedGroups, loadedAlerts, loadedTickets, loadedUsers] = await Promise.all([
+          fetchSettings(),
+          fetchStudents(),
+          fetchGroups(),
+          fetchAlerts(),
+          fetchTickets(),
+          fetchUsers()
+        ]);
+        if (loadedSettings) setSettings(loadedSettings);
+        if (loadedStudents && loadedStudents.length > 0) setStudents(loadedStudents);
+        if (loadedGroups && loadedGroups.length > 0) setGroups(loadedGroups);
+        if (loadedAlerts && loadedAlerts.length > 0) setAlerts(loadedAlerts);
+        if (loadedTickets && loadedTickets.length > 0) setTickets(loadedTickets);
+        if (loadedUsers && loadedUsers.length > 0) setUsers(loadedUsers);
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+      }
+    }
+    loadData();
+  }, []);
+
   // Ações nos alertas
   const handleResolveAlert = (id: string) => {
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, status: 'resolved' } : a));
     showNotification('Ocorrência marcada como resolvida.');
   };
 
-  const handleCreateTicketFromAlert = (alert: Alert) => {
+  const handleCreateTicketFromAlert = async (alert: Alert) => {
     const newTicket: SupportTicket = {
       id: `tk-${Date.now().toString().slice(-4)}`,
       protocol: `TK-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -104,9 +143,11 @@ export default function SentinelaDashboard() {
       summary: alert.messageSnippet,
       createdAt: 'Agora mesmo'
     };
-    setTickets([newTicket, ...tickets]);
+    const updatedTickets = [newTicket, ...tickets];
+    setTickets(updatedTickets);
+    await persistTicket(newTicket);
     setAlerts(prev => prev.map(a => a.id === alert.id ? { ...a, status: 'ticketed' } : a));
-    showNotification(`Ticket ${newTicket.protocol} gerado automaticamente e enviado ao Kanban.`);
+    showNotification(`Ticket ${newTicket.protocol} gerado automaticamente e salvo no banco.`);
   };
 
   const handleAssignAttendant = (alertId: string, attendantName: string) => {
@@ -114,35 +155,44 @@ export default function SentinelaDashboard() {
     showNotification(`Alerta atribuído ao atendente ${attendantName}.`);
   };
 
-  const handleAddUser = (newUserData: Omit<SystemUser, 'id' | 'createdAt' | 'lastActiveAt'>) => {
+  const handleAddUser = async (newUserData: Omit<SystemUser, 'id' | 'createdAt' | 'lastActiveAt'>) => {
     const newUser: SystemUser = {
       ...newUserData,
       id: `usr-${Date.now().toString().slice(-4)}`,
       createdAt: 'Hoje',
       lastActiveAt: 'Recém-criado'
     };
-    setUsers([newUser, ...users]);
-    showNotification(`Usuário ${newUser.name} convidado com sucesso.`);
+    const updatedUsers = [newUser, ...users];
+    setUsers(updatedUsers);
+    await persistUsers(updatedUsers);
+    showNotification(`Usuário ${newUser.name} cadastrado com sucesso.`);
   };
 
-  const handleUpdateUser = (id: string, updates: Partial<SystemUser>) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
+  const handleUpdateUser = async (id: string, updates: Partial<SystemUser>) => {
+    const updated = users.map(u => u.id === id ? { ...u, ...updates } : u);
+    setUsers(updated);
+    await persistUsers(updated);
     showNotification('Dados de usuário e permissões atualizados.');
   };
 
-  const handleDeleteUser = (id: string) => {
-    setUsers(prev => prev.filter(u => u.id !== id));
+  const handleDeleteUser = async (id: string) => {
+    const updated = users.filter(u => u.id !== id);
+    setUsers(updated);
+    await persistUsers(updated);
     showNotification('Usuário removido da equipe do Sentinela.');
   };
 
-  const handleToggleGroupMonitoring = (groupId: string) => {
-    setGroups(prev => prev.map(g => g.id === groupId ? { ...g, isMonitored: !g.isMonitored } : g));
+  const handleToggleGroupMonitoring = async (groupId: string) => {
+    const updated = groups.map(g => g.id === groupId ? { ...g, isMonitored: !g.isMonitored } : g);
+    setGroups(updated);
+    await persistGroups(updated);
     showNotification('Configuração de monitoramento de grupo alterada.');
   };
 
-  const handleSaveSettings = (updated: PlatformSettings) => {
+  const handleSaveSettings = async (updated: PlatformSettings) => {
     setSettings(updated);
-    showNotification('Configurações de chaves de IA, Kiwify e WhatsApp salvas com sucesso!');
+    await persistSettings(updated);
+    showNotification('Configurações salvas e sincronizadas com sucesso!');
   };
 
   // Simulação completa de Webhook Kiwify: Reembolso -> Remoção

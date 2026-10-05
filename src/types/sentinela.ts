@@ -158,6 +158,10 @@ export interface PlatformSettings {
   // SLA & Alertas
   slaWarningMinutes: number;
   notifySupervisorsOnConflict: boolean;
+
+  // Supabase (Persistência Real)
+  supabaseUrl?: string;
+  supabaseAnonKey?: string;
 }
 
 
