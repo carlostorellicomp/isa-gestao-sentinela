@@ -134,6 +134,7 @@ export interface SystemUser {
   avatar: string;
   createdAt: string;
   lastActiveAt: string;
+  password?: string;
 }
 
 export interface PlatformSettings {

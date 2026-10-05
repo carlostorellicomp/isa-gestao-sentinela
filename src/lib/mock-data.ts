@@ -417,8 +417,8 @@ export const INITIAL_TOP_TOPICS: TopDoubtTopic[] = [
 export const INITIAL_SYSTEM_USERS: SystemUser[] = [
   {
     id: 'usr-01',
-    name: 'Rodrigo Mendes',
-    email: 'rodrigo@empresa.com.br',
+    name: 'Rodrigo Mendes (Admin Master)',
+    email: 'admin@isagestao.com.br',
     phone: '+55 11 98888-7777',
     role: 'admin',
     status: 'active',
@@ -426,7 +426,8 @@ export const INITIAL_SYSTEM_USERS: SystemUser[] = [
     permissions: ['manage_users', 'trigger_removals', 'assign_tickets', 'view_financials', 'manage_integrations'],
     avatar: 'RM',
     createdAt: '01/08/2026',
-    lastActiveAt: 'Há 5 min'
+    lastActiveAt: 'Há 5 min',
+    password: 'admin123'
   },
   {
     id: 'usr-02',
@@ -439,7 +440,8 @@ export const INITIAL_SYSTEM_USERS: SystemUser[] = [
     permissions: ['trigger_removals', 'assign_tickets', 'view_financials'],
     avatar: 'AS',
     createdAt: '15/08/2026',
-    lastActiveAt: 'Agora'
+    lastActiveAt: 'Agora',
+    password: 'senha123'
   },
   {
     id: 'usr-03',
@@ -452,7 +454,8 @@ export const INITIAL_SYSTEM_USERS: SystemUser[] = [
     permissions: ['assign_tickets'],
     avatar: 'LN',
     createdAt: '01/09/2026',
-    lastActiveAt: 'Há 12 min'
+    lastActiveAt: 'Há 12 min',
+    password: 'senha123'
   },
   {
     id: 'usr-04',
@@ -465,7 +468,8 @@ export const INITIAL_SYSTEM_USERS: SystemUser[] = [
     permissions: ['assign_tickets'],
     avatar: 'CE',
     createdAt: '10/09/2026',
-    lastActiveAt: 'Há 2 min'
+    lastActiveAt: 'Há 2 min',
+    password: 'senha123'
   },
   {
     id: 'usr-05',
@@ -478,7 +482,8 @@ export const INITIAL_SYSTEM_USERS: SystemUser[] = [
     permissions: ['assign_tickets'],
     avatar: 'BR',
     createdAt: '20/09/2026',
-    lastActiveAt: 'Há 35 min'
+    lastActiveAt: 'Há 35 min',
+    password: 'senha123'
   },
   {
     id: 'usr-06',
@@ -491,7 +496,8 @@ export const INITIAL_SYSTEM_USERS: SystemUser[] = [
     permissions: ['view_financials'],
     avatar: 'JP',
     createdAt: '25/09/2026',
-    lastActiveAt: 'Ontem'
+    lastActiveAt: 'Ontem',
+    password: 'senha123'
   }
 ];
 

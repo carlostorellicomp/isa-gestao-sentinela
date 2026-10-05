@@ -50,6 +50,7 @@ export function UserManagement({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('senha123');
   const [role, setRole] = useState<UserRole>('attendant');
   const [status, setStatus] = useState<UserStatus>('active');
   const [assignedGroups, setAssignedGroups] = useState<string[]>([]);
@@ -60,6 +61,7 @@ export function UserManagement({
     setName('');
     setEmail('');
     setPhone('+55 ');
+    setPassword('senha123');
     setRole('attendant');
     setStatus('active');
     setAssignedGroups([]);
@@ -72,6 +74,7 @@ export function UserManagement({
     setName(user.name);
     setEmail(user.email);
     setPhone(user.phone);
+    setPassword(user.password || 'senha123');
     setRole(user.role);
     setStatus(user.status);
     setAssignedGroups(user.assignedGroupIds);
@@ -95,6 +98,7 @@ export function UserManagement({
         name,
         email,
         phone,
+        password,
         role,
         status,
         assignedGroupIds: assignedGroups,
@@ -106,6 +110,7 @@ export function UserManagement({
         name,
         email,
         phone,
+        password: password.trim() || 'senha123',
         role,
         status,
         assignedGroupIds: assignedGroups,
@@ -526,6 +531,23 @@ export function UserManagement({
                     <option value="suspended">Suspenso (Acesso bloqueado)</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Senha de Acesso */}
+              <div>
+                <label className="text-xs font-semibold text-[#374151] block mb-1">
+                  Senha de Acesso à Plataforma
+                </label>
+                <input
+                  type="text"
+                  placeholder="Defina a senha (padrão: senha123)"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full bg-[#FDFBF7] border border-[#E5E7EB] rounded-lg px-3 py-2 text-xs text-[#111827] font-mono focus:outline-none focus:border-[#E65C00]"
+                />
+                <span className="text-[10px] text-[#6B7280] mt-1 block">
+                  O colaborador usará este e-mail e senha para fazer login no sistema fechado.
+                </span>
               </div>
 
               {/* Grupos atribuídos */}

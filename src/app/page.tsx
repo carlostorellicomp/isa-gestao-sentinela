@@ -26,7 +26,8 @@ import {
   LayoutGrid,
   Smartphone,
   ChevronLeft,
-  Settings
+  Settings,
+  LogOut
 } from 'lucide-react';
 
 import { 
@@ -46,6 +47,8 @@ import { UserManagement } from '@/components/users/user-management';
 import { WhatsAppConnectModal } from '@/components/whatsapp/whatsapp-connect-modal';
 import { ModuleHub } from '@/components/hub/module-hub';
 import { SettingsView } from '@/components/settings/settings-view';
+import { LoginView } from '@/components/auth/login-view';
+import { getStoredSession, clearStoredSession } from '@/lib/auth/auth-service';
 import { 
   fetchSettings, 
   persistSettings, 
@@ -62,6 +65,10 @@ import {
 } from '@/lib/db/sentinela-db';
 
 export default function SentinelaDashboard() {
+  // Estado de Autenticação / Sessão (Sistema Fechado com Acesso Restrito)
+  const [currentUser, setCurrentUser] = useState<SystemUser | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
   // Controle de Módulo Global: Hub Inicial vs Módulo Suporte (Sentinela)
   // Default: 'hub' (Página Principal = Central de Módulos)
   const [currentModule, setCurrentModule] = useState<'hub' | 'suporte'>('hub');
@@ -96,6 +103,28 @@ export default function SentinelaDashboard() {
     setActionNotice(msg);
     setTimeout(() => setActionNotice(null), 4000);
   };
+
+  // Carregar sessão persistida de login
+  useEffect(() => {
+    const session = getStoredSession();
+    if (session) {
+      setCurrentUser(session);
+    }
+    setIsAuthLoading(false);
+  }, []);
+
+  const handleLogout = () => {
+    clearStoredSession();
+    setCurrentUser(null);
+    showNotification('Sessão encerrada com sucesso.');
+  };
+
+  // Se usuário não for admin e tentar acessar aba restrita, redireciona para 'visao_geral'
+  useEffect(() => {
+    if (currentUser && currentUser.role !== 'admin' && (activeTab === 'usuarios' || activeTab === 'configuracoes')) {
+      setActiveTab('visao_geral');
+    }
+  }, [currentUser, activeTab]);
 
   // Carregar dados persistidos (Supabase / LocalStorage)
   useEffect(() => {
@@ -243,6 +272,33 @@ export default function SentinelaDashboard() {
     return a.category === alertFilter;
   });
 
+  // Se estiver validando sessão inicial, exibe tela de carregamento seguro PaperFlow
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#E65C00] flex items-center justify-center text-white shadow-md animate-pulse">
+            <ShieldAlert className="w-6 h-6" />
+          </div>
+          <span className="text-xs font-semibold text-[#4B5563]">Verificando credenciais de acesso seguro...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não autenticado, bloqueia completamente o acesso e exibe a tela de login
+  if (!currentUser) {
+    return (
+      <LoginView
+        systemUsers={users}
+        onLoginSuccess={(authenticatedUser) => {
+          setCurrentUser(authenticatedUser);
+          showNotification(`Bem-vindo(a), ${authenticatedUser.name}!`);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#111827] flex flex-col font-sans selection:bg-[#FFB380]/30 selection:text-[#E65C00]">
       
@@ -359,6 +415,32 @@ export default function SentinelaDashboard() {
                   </button>
                 </>
               )}
+
+              {/* Sessão Ativa & Botão Sair */}
+              <div className="flex items-center gap-2 pl-2 sm:border-l sm:border-[#E5E7EB]">
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[#F7F4EB] border border-[#E8E4D9]">
+                  <div className="w-6 h-6 rounded-lg bg-[#E65C00] text-white font-bold text-xs flex items-center justify-center shrink-0">
+                    {currentUser.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="hidden sm:block text-left">
+                    <span className="text-xs font-bold text-[#111827] block leading-tight truncate max-w-[110px]">
+                      {currentUser.name}
+                    </span>
+                    <span className="text-[10px] font-semibold text-[#6B7280] block leading-tight capitalize">
+                      {currentUser.role === 'admin' ? 'Administrador' : currentUser.role === 'supervisor' ? 'Supervisor' : 'Atendente'}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleLogout}
+                  title="Encerrar sessão segura"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-[#E5E7EB] hover:border-rose-200 text-xs font-semibold text-[#4B5563] hover:text-rose-600 transition-colors cursor-pointer shadow-2xs"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">Sair</span>
+                </button>
+              </div>
             </div>
 
           </div>
@@ -472,30 +554,34 @@ export default function SentinelaDashboard() {
                 <span>Equipe & SLA</span>
               </button>
 
-              <button
-                onClick={() => setActiveTab('usuarios')}
-                className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'usuarios'
-                    ? 'bg-[#E65C00] text-white font-semibold shadow-xs'
-                    : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F7F4EB]'
-                }`}
-              >
-                <UserCog className="w-4 h-4" />
-                <span>Gestão de Usuários</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-gray-200 text-[#4B5563]">{users.length}</span>
-              </button>
+              {currentUser.role === 'admin' && (
+                <button
+                  onClick={() => setActiveTab('usuarios')}
+                  className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+                    activeTab === 'usuarios'
+                      ? 'bg-[#E65C00] text-white font-semibold shadow-xs'
+                      : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F7F4EB]'
+                  }`}
+                >
+                  <UserCog className="w-4 h-4" />
+                  <span>Gestão de Usuários</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-gray-200 text-[#4B5563]">{users.length}</span>
+                </button>
+              )}
 
-              <button
-                onClick={() => setActiveTab('configuracoes')}
-                className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                  activeTab === 'configuracoes'
-                    ? 'bg-[#E65C00] text-white font-semibold shadow-xs'
-                    : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F7F4EB]'
-                }`}
-              >
-                <Settings className="w-4 h-4" />
-                <span>Configurações & Conexões</span>
-              </button>
+              {currentUser.role === 'admin' && (
+                <button
+                  onClick={() => setActiveTab('configuracoes')}
+                  className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+                    activeTab === 'configuracoes'
+                      ? 'bg-[#E65C00] text-white font-semibold shadow-xs'
+                      : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F7F4EB]'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Configurações & Conexões</span>
+                </button>
+              )}
             </nav>
           )}
 
@@ -512,10 +598,10 @@ export default function SentinelaDashboard() {
               if (key === 'suporte') setCurrentModule('suporte');
             }}
             onOpenWhatsAppConnect={() => setIsWhatsAppModalOpen(true)}
-            onOpenSettings={() => {
+            onOpenSettings={currentUser.role === 'admin' ? () => {
               setCurrentModule('suporte');
               setActiveTab('configuracoes');
-            }}
+            } : undefined}
             isWhatsAppConnected={whatsAppInstance.status === 'connected'}
             activeStudentsCount={1284}
             activeGroupsCount={monitoredGroups.length}
@@ -1434,8 +1520,8 @@ export default function SentinelaDashboard() {
           </div>
         )}
 
-        {/* SUB-TAB 9: GESTÃO DE USUÁRIOS & RBAC */}
-        {activeTab === 'usuarios' && (
+        {/* SUB-TAB 9: GESTÃO DE USUÁRIOS & RBAC (APENAS ADMINISTRADORES) */}
+        {activeTab === 'usuarios' && currentUser.role === 'admin' && (
           <UserManagement
             users={users}
             groups={groups}
@@ -1445,8 +1531,8 @@ export default function SentinelaDashboard() {
           />
         )}
 
-        {/* SUB-TAB 10: CONFIGURAÇÕES GERAIS (KEYS, KIWIFY, WHATSAPP) */}
-        {activeTab === 'configuracoes' && (
+        {/* SUB-TAB 10: CONFIGURAÇÕES GERAIS (KEYS, KIWIFY, WHATSAPP - APENAS ADMINISTRADORES) */}
+        {activeTab === 'configuracoes' && currentUser.role === 'admin' && (
           <SettingsView
             settings={settings}
             onSave={handleSaveSettings}
