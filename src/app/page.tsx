@@ -49,7 +49,8 @@ import { SettingsView } from '@/components/settings/settings-view';
 
 export default function SentinelaDashboard() {
   // Controle de Módulo Global: Hub Inicial vs Módulo Suporte (Sentinela)
-  const [currentModule, setCurrentModule] = useState<'hub' | 'suporte'>('suporte');
+  // Default: 'hub' (Página Principal = Central de Módulos)
+  const [currentModule, setCurrentModule] = useState<'hub' | 'suporte'>('hub');
 
   // Controle de Abas no Módulo Suporte (Default: Visão Geral / Dashboard Inicial)
   const [activeTab, setActiveTab] = useState<'visao_geral' | 'agora' | 'grupos' | 'alunos' | 'reembolso' | 'insights' | 'tickets' | 'equipe' | 'usuarios' | 'configuracoes'>('visao_geral');
@@ -210,20 +211,29 @@ export default function SentinelaDashboard() {
             
             {/* Brand + Module Switcher */}
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setCurrentModule('hub')}
+                className="flex items-center gap-3 text-left hover:opacity-90 transition-opacity cursor-pointer"
+                title="Voltar para a Central de Módulos"
+              >
                 <div className="w-10 h-10 rounded-xl bg-[#E65C00] flex items-center justify-center text-white shadow-xs">
                   <ShieldAlert className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold tracking-tight text-[#111827]">SENTINELA</span>
+                    <span className="text-lg font-bold tracking-tight text-[#111827]">ISA GESTÃO</span>
                     <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#E65C00]/10 text-[#E65C00] border border-[#E65C00]/20">
-                      ISA Gestão
+                      {currentModule === 'hub' ? 'Portal Central' : 'Sentinela'}
                     </span>
                   </div>
-                  <p className="text-xs text-[#4B5563]">Supervisão de suporte, grupos e retenção Kiwify</p>
+                  <p className="text-xs text-[#4B5563]">
+                    {currentModule === 'hub' 
+                      ? 'Ecossistema integrado de gestão empresarial'
+                      : 'Supervisão de suporte, grupos e retenção Kiwify'
+                    }
+                  </p>
                 </div>
-              </div>
+              </button>
 
               <div className="h-6 w-px bg-[#E5E7EB] hidden sm:block" />
 
